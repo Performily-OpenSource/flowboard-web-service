@@ -1,0 +1,99 @@
+package com.performily.flowboard.request.infrastructure.persistence.jpa.adapters;
+
+import com.performily.flowboard.request.domain.model.entities.RequestType;
+import com.performily.flowboard.request.domain.repositories.RequestTypeRepository;
+import com.performily.flowboard.request.infrastructure.persistence.jpa.assemblers.RequestTypePersistenceAssembler;
+import com.performily.flowboard.request.infrastructure.persistence.jpa.entities.RequestTypePersistenceEntity;
+import com.performily.flowboard.request.infrastructure.persistence.jpa.repositories.RequestTypePersistenceRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Request Type Repository Impl
+ * @summary
+ * Repository adapter that bridges the request type domain repository port with Spring Data JPA.
+ * The read methods use read-only transactions and an existing type is saved by
+ * updating its managed entity, so its fields are not deleted and inserted again.
+ *
+ * Methods run inside a transaction so the lazy fields of each type can be read
+ * while assembling the domain object.
+ *
+ * @since 1.0.0
+ */
+@Repository
+@Transactional
+public class RequestTypeRepositoryImpl implements RequestTypeRepository {
+    private final RequestTypePersistenceRepository requestTypePersistenceRepository;
+
+    /**
+     * Constructor.
+     *
+     * @param requestTypePersistenceRepository the {@link RequestTypePersistenceRepository} instance
+     */
+    public RequestTypeRepositoryImpl(RequestTypePersistenceRepository requestTypePersistenceRepository) {
+        this.requestTypePersistenceRepository = requestTypePersistenceRepository;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<RequestType> findById(Long id) {
+        return requestTypePersistenceRepository.findById(id).map(RequestTypePersistenceAssembler::toDomainFromPersistence);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RequestType> findAll() {
+        return requestTypePersistenceRepository.findAllByOrderByNameAsc().stream()
+                .map(RequestTypePersistenceAssembler::toDomainFromPersistence).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RequestType> findAllByActiveTrue() {
+        return requestTypePersistenceRepository.findAllByActiveTrueOrderByNameAsc().stream()
+                .map(RequestTypePersistenceAssembler::toDomainFromPersistence).toList();
+    }
+
+    @Override
+    public RequestType save(RequestType requestType) {
+        var entity = requestType.getId() == null
+                ? RequestTypePersistenceAssembler.toPersistenceFromDomain(requestType)
+                : updateManagedEntity(requestType);
+        var saved = requestTypePersistenceRepository.saveAndFlush(entity);
+        return RequestTypePersistenceAssembler.toDomainFromPersistence(saved);
+    }
+
+    @Override
+    public void deleteById(Long id) {
+        requestTypePersistenceRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByName(String name) {
+        return requestTypePersistenceRepository.existsByName(name);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existsByNameAndIdIsNot(String name, Long id) {
+        return requestTypePersistenceRepository.existsByNameAndIdIsNot(name, id);
+    }
+
+    /**
+     * Loads the managed entity of an existing request type and copies the domain state over it.
+     *
+     * @param requestType the {@link RequestType} instance with id
+     * @return the updated managed entity
+     * @throws IllegalArgumentException if the request type does not exist
+     */
+    private RequestTypePersistenceEntity updateManagedEntity(RequestType requestType) {
+        var entity = requestTypePersistenceRepository.findById(requestType.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Request type %d not found".formatted(requestType.getId())));
+        RequestTypePersistenceAssembler.updatePersistenceFromDomain(requestType, entity);
+        return entity;
+    }
+}
