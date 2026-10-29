@@ -37,6 +37,8 @@ public interface PayslipRepository {
      * @param payrollPeriodId the payroll period id
      * @return the list of payslips
      */
+    List<Payslip> findAll();
+
     List<Payslip> findAllByPayrollPeriodId(Long payrollPeriodId);
 
     /**
