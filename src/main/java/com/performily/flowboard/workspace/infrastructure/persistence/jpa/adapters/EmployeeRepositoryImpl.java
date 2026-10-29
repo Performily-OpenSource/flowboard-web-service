@@ -129,4 +129,9 @@ public class EmployeeRepositoryImpl implements EmployeeRepository {
     public boolean existsByDirectManagerIdAndStatusNot(Long managerId, EmploymentStatus status) {
         return employeePersistenceRepository.countByDirectManagerIdAndStatusNot(managerId, status) > 0;
     }
-}
+
+    @Override
+    public boolean existsByJobAssignmentPositionId(Long positionId) {
+        return employeePersistenceRepository.countJobAssignmentsByPositionId(positionId) > 0;
+    }
+}

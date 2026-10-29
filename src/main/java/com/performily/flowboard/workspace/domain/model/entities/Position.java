@@ -68,6 +68,38 @@ public class Position {
     }
 
     /**
+     * Renames the position.
+     *
+     * @param title the new title
+     * @throws IllegalArgumentException if the title is blank or exceeds the maximum length
+     */
+    public void rename(String title) {
+        this.title = validateTitle(title);
+    }
+
+    /**
+     * Moves the position to another area.
+     *
+     * @param area the new {@link Area}
+     * @throws NullPointerException if the area is null
+     */
+    public void changeArea(Area area) {
+        this.area = Objects.requireNonNull(area, "Position area cannot be null");
+    }
+
+    /**
+     * Activates the position.
+     *
+     * @throws IllegalStateException if the position is already active
+     */
+    public void activate() {
+        if (this.active) {
+            throw new IllegalStateException("Position is already active");
+        }
+        this.active = true;
+    }
+
+    /**
      * Deactivates the position.
      */
     public void deactivate() {
@@ -111,4 +143,4 @@ public class Position {
     public boolean isActive() {
         return active;
     }
-}
+}

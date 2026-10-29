@@ -16,9 +16,11 @@ import com.performily.flowboard.workspace.domain.model.queries.GetAreaByIdQuery;
 import com.performily.flowboard.workspace.interfaces.rest.resources.AreaResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.CreateAreaResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.RenameAreaResource;
+import com.performily.flowboard.workspace.interfaces.rest.resources.UpdateAreaDescriptionResource;
 import com.performily.flowboard.workspace.interfaces.rest.transform.AreaResourceFromEntityAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.CreateAreaCommandFromResourceAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.RenameAreaCommandFromResourceAssembler;
+import com.performily.flowboard.workspace.interfaces.rest.transform.UpdateAreaDescriptionCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -155,6 +157,30 @@ public class AreasController {
     }
 
     /**
+     * Update area description.
+     *
+     * @param areaId the area id
+     * @param resource the {@link UpdateAreaDescriptionResource} instance
+     * @return the HTTP response
+     */
+    @PatchMapping("/{areaId}/description")
+    @Operation(summary = "Update area description", description = "Updates the description of an area. A blank description clears it.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Description updated successfully",
+                    content = @Content(schema = @Schema(implementation = AreaResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Area not found")
+    })
+    public ResponseEntity<?> updateAreaDescription(
+            @PathVariable @Parameter(description = "Area unique identifier", example = "1", required = true) Long areaId,
+            @Valid @RequestBody UpdateAreaDescriptionResource resource) {
+        var command = UpdateAreaDescriptionCommandFromResourceAssembler.toCommandFromResource(areaId, resource);
+        var result = areaCommandService.handle(command);
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, this::toResource, HttpStatus.OK);
+    }
+
+    /**
      * Activate area.
      *
      * @param areaId the area id
@@ -206,4 +232,4 @@ public class AreasController {
         var activeEmployees = employeeQueryService.handle(new GetActiveEmployeeCountByAreaIdQuery(area.getId()));
         return AreaResourceFromEntityAssembler.toResourceFromEntity(area, activeEmployees);
     }
-}
+}

@@ -161,6 +161,53 @@ public class EmployeeCommandServiceImpl implements EmployeeCommandService {
     /**
      * Registers the employee once the area and the position have been found.
      */
+    @Override
+    public Result<Employee, ApplicationError> handle(ReactivateEmployeeCommand command) {
+        var employee = employeeRepository.findById(command.employeeId());
+        if (employee.isEmpty())
+            return Result.failure(ApplicationError.notFound("Employee", command.employeeId().toString()));
+        if (employee.get().getStatus() == EmploymentStatus.SUSPENDED
+                && employeeRepository.existsByIdentityDocumentAndStatus(employee.get().getIdentityDocument(), EmploymentStatus.ACTIVE))
+            return Result.failure(ApplicationError.conflict("Employee",
+                    "Identity document already belongs to an active employee"));
+        return update(command.employeeId(), "reactivate-employee", Employee::reactivate);
+    }
+
+    @Override
+    public Result<Employee, ApplicationError> handle(UpdateEmployeeIdentityDocumentCommand command) {
+        try {
+            var identityDocument = new IdentityDocument(command.identityDocumentType(), command.identityDocumentNumber());
+            var employee = employeeRepository.findById(command.employeeId());
+            if (employee.isEmpty())
+                return Result.failure(ApplicationError.notFound("Employee", command.employeeId().toString()));
+            if (!identityDocument.equals(employee.get().getIdentityDocument())
+                    && employeeRepository.existsByIdentityDocumentAndStatus(identityDocument, EmploymentStatus.ACTIVE))
+                return Result.failure(ApplicationError.conflict("Employee",
+                        "Identity document '%s' already belongs to an active employee".formatted(identityDocument.number())));
+            return update(command.employeeId(), "update-employee-identity-document", found ->
+                    found.updateIdentityDocument(identityDocument));
+        } catch (IllegalArgumentException e) {
+            return Result.failure(ApplicationError.validationError("employee", e.getMessage()));
+        }
+    }
+
+    @Override
+    public Result<Employee, ApplicationError> handle(UpdateEmployeeContractCommand command) {
+        return update(command.employeeId(), "update-employee-contract", employee ->
+                employee.updateContract(command.contractType(), command.contractEndDate()));
+    }
+
+    @Override
+    public Result<Employee, ApplicationError> handle(RemoveEmployeeDocumentCommand command) {
+        var employee = employeeRepository.findById(command.employeeId());
+        if (employee.isEmpty())
+            return Result.failure(ApplicationError.notFound("Employee", command.employeeId().toString()));
+        if (employee.get().getDocuments().stream().noneMatch(document -> command.documentId().equals(document.getId())))
+            return Result.failure(ApplicationError.notFound("EmployeeDocument", command.documentId().toString()));
+        return update(command.employeeId(), "remove-employee-document", found ->
+                found.removeDocument(command.documentId()));
+    }
+
     private Result<Long, ApplicationError> register(RegisterEmployeeCommand command, AreaAndPosition job) {
         try {
             var identityDocument = new IdentityDocument(command.identityDocumentType(), command.identityDocumentNumber());
@@ -255,4 +302,4 @@ public class EmployeeCommandServiceImpl implements EmployeeCommandService {
 
     private record AreaAndPosition(Area area, Position position) {
     }
-}
+}

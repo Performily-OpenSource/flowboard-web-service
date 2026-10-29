@@ -53,6 +53,16 @@ public class Area {
     }
 
     /**
+     * Updates the description of the area. A blank description clears it.
+     *
+     * @param description the new description
+     * @throws IllegalArgumentException if the description exceeds the maximum length
+     */
+    public void updateDescription(String description) {
+        this.description = validateDescription(description);
+    }
+
+    /**
      * Deactivates the area.
      */
     public void deactivate() {
@@ -113,4 +123,4 @@ public class Area {
     public boolean isActive() {
         return active;
     }
-}
+}

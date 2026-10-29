@@ -7,6 +7,7 @@ import com.performily.flowboard.shared.interfaces.rest.transform.ResponseEntityA
 import com.performily.flowboard.workspace.application.commandservices.EmployeeCommandService;
 import com.performily.flowboard.workspace.application.queryservices.EmployeeQueryService;
 import com.performily.flowboard.workspace.domain.model.aggregates.Employee;
+import com.performily.flowboard.workspace.domain.model.commands.ReactivateEmployeeCommand;
 import com.performily.flowboard.workspace.domain.model.commands.RemoveDirectManagerCommand;
 import com.performily.flowboard.workspace.domain.model.commands.SuspendEmployeeCommand;
 import com.performily.flowboard.workspace.domain.model.queries.GetAllEmployeesByDirectManagerIdQuery;
@@ -272,6 +273,78 @@ public class EmployeesController {
     }
 
     /**
+     * Reactivate employee.
+     *
+     * @param employeeId the employee id
+     * @return the HTTP response
+     */
+    @PatchMapping("/{employeeId}/reactivate")
+    @Operation(summary = "Reactivate employee", description = "Reactivates a SUSPENDED employee. The identity document cannot belong to another ACTIVE employee.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Employee reactivated successfully",
+                    content = @Content(schema = @Schema(implementation = EmployeeResource.class))),
+            @ApiResponse(responseCode = "404", description = "Employee not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - identity document belongs to an active employee"),
+            @ApiResponse(responseCode = "422", description = "Employee is not suspended")
+    })
+    public ResponseEntity<?> reactivateEmployee(
+            @PathVariable @Parameter(description = "Employee unique identifier", example = "1", required = true) Long employeeId) {
+        var result = employeeCommandService.handle(new ReactivateEmployeeCommand(employeeId));
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, EmployeeResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
+     * Update identity document.
+     *
+     * @param employeeId the employee id
+     * @param resource the {@link UpdateEmployeeIdentityDocumentResource} instance
+     * @return the HTTP response
+     */
+    @PutMapping("/{employeeId}/identity-document")
+    @Operation(summary = "Update identity document", description = "Updates the identity document of an employee. It cannot repeat among ACTIVE employees.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Identity document updated successfully",
+                    content = @Content(schema = @Schema(implementation = EmployeeResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Employee not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - identity document belongs to an active employee")
+    })
+    public ResponseEntity<?> updateIdentityDocument(
+            @PathVariable @Parameter(description = "Employee unique identifier", example = "1", required = true) Long employeeId,
+            @Valid @RequestBody UpdateEmployeeIdentityDocumentResource resource) {
+        var command = UpdateEmployeeIdentityDocumentCommandFromResourceAssembler.toCommandFromResource(employeeId, resource);
+        var result = employeeCommandService.handle(command);
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, EmployeeResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
+     * Update contract.
+     *
+     * @param employeeId the employee id
+     * @param resource the {@link UpdateEmployeeContractResource} instance
+     * @return the HTTP response
+     */
+    @PutMapping("/{employeeId}/contract")
+    @Operation(summary = "Update contract", description = "Updates the contract type and the contract end date of an employee. The hire date does not change.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Contract updated successfully",
+                    content = @Content(schema = @Schema(implementation = EmployeeResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Employee not found"),
+            @ApiResponse(responseCode = "422", description = "Employee is terminated")
+    })
+    public ResponseEntity<?> updateContract(
+            @PathVariable @Parameter(description = "Employee unique identifier", example = "1", required = true) Long employeeId,
+            @Valid @RequestBody UpdateEmployeeContractResource resource) {
+        var command = UpdateEmployeeContractCommandFromResourceAssembler.toCommandFromResource(employeeId, resource);
+        var result = employeeCommandService.handle(command);
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, EmployeeResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
      * Terminate employee.
      *
      * @param employeeId the employee id
@@ -323,4 +396,4 @@ public class EmployeesController {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 result, EmployeeResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
     }
-}
+}

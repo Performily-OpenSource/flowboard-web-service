@@ -127,4 +127,12 @@ public interface EmployeeRepository {
      * @return true if it has
      */
     boolean existsByDirectManagerIdAndStatusNot(Long managerId, EmploymentStatus status);
-}
+
+    /**
+     * Checks whether any employee holds or has ever held a position, according to the job assignment history.
+     *
+     * @param positionId the position id
+     * @return true if it has
+     */
+    boolean existsByJobAssignmentPositionId(Long positionId);
+}

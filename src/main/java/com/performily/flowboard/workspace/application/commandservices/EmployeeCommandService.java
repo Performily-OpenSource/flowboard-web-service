@@ -63,6 +63,38 @@ public interface EmployeeCommandService {
     Result<Employee, ApplicationError> handle(SuspendEmployeeCommand command);
 
     /**
+     * Handles the reactivation of a suspended employee.
+     *
+     * @param command the {@link ReactivateEmployeeCommand} instance
+     * @return the result with the updated employee or the error
+     */
+    Result<Employee, ApplicationError> handle(ReactivateEmployeeCommand command);
+
+    /**
+     * Handles the update of the identity document of an employee.
+     *
+     * @param command the {@link UpdateEmployeeIdentityDocumentCommand} instance
+     * @return the result with the updated employee or the error
+     */
+    Result<Employee, ApplicationError> handle(UpdateEmployeeIdentityDocumentCommand command);
+
+    /**
+     * Handles the update of the contract of an employee.
+     *
+     * @param command the {@link UpdateEmployeeContractCommand} instance
+     * @return the result with the updated employee or the error
+     */
+    Result<Employee, ApplicationError> handle(UpdateEmployeeContractCommand command);
+
+    /**
+     * Handles the removal of a document from an employee record.
+     *
+     * @param command the {@link RemoveEmployeeDocumentCommand} instance
+     * @return the result with the updated employee or the error
+     */
+    Result<Employee, ApplicationError> handle(RemoveEmployeeDocumentCommand command);
+
+    /**
      * Handles employee termination.
      *
      * @param command command containing the employee id and the termination details
@@ -85,4 +117,4 @@ public interface EmployeeCommandService {
      * @return attached document or an application error
      */
     Result<EmployeeDocument, ApplicationError> handle(AttachEmployeeDocumentCommand command);
-}
+}

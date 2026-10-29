@@ -6,6 +6,7 @@ import com.performily.flowboard.workspace.domain.model.commands.ActivateAreaComm
 import com.performily.flowboard.workspace.domain.model.commands.CreateAreaCommand;
 import com.performily.flowboard.workspace.domain.model.commands.DeactivateAreaCommand;
 import com.performily.flowboard.workspace.domain.model.commands.RenameAreaCommand;
+import com.performily.flowboard.workspace.domain.model.commands.UpdateAreaDescriptionCommand;
 import com.performily.flowboard.workspace.domain.model.entities.Area;
 
 /**
@@ -33,6 +34,14 @@ public interface AreaCommandService {
     Result<Area, ApplicationError> handle(RenameAreaCommand command);
 
     /**
+     * Handles the update of the description of an area.
+     *
+     * @param command the {@link UpdateAreaDescriptionCommand} instance
+     * @return the result with the updated area or the error
+     */
+    Result<Area, ApplicationError> handle(UpdateAreaDescriptionCommand command);
+
+    /**
      * Handles area activation.
      *
      * @param command command containing the area id
@@ -47,4 +56,4 @@ public interface AreaCommandService {
      * @return updated area or an application error
      */
     Result<Area, ApplicationError> handle(DeactivateAreaCommand command);
-}
+}
