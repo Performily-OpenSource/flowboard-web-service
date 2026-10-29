@@ -7,6 +7,7 @@ import com.performily.flowboard.workspace.domain.model.commands.ActivateAreaComm
 import com.performily.flowboard.workspace.domain.model.commands.CreateAreaCommand;
 import com.performily.flowboard.workspace.domain.model.commands.DeactivateAreaCommand;
 import com.performily.flowboard.workspace.domain.model.commands.RenameAreaCommand;
+import com.performily.flowboard.workspace.domain.model.commands.UpdateAreaDescriptionCommand;
 import com.performily.flowboard.workspace.domain.model.entities.Area;
 import com.performily.flowboard.workspace.domain.model.valueobjects.EmploymentStatus;
 import com.performily.flowboard.workspace.domain.repositories.AreaRepository;
@@ -69,6 +70,22 @@ public class AreaCommandServiceImpl implements AreaCommandService {
     }
 
     @Override
+    public Result<Area, ApplicationError> handle(UpdateAreaDescriptionCommand command) {
+        var result = areaRepository.findById(command.areaId());
+        if (result.isEmpty())
+            return Result.failure(ApplicationError.notFound("Area", command.areaId().toString()));
+        var area = result.get();
+        try {
+            area.updateDescription(command.description());
+            return Result.success(areaRepository.save(area));
+        } catch (IllegalArgumentException e) {
+            return Result.failure(ApplicationError.validationError("area", e.getMessage()));
+        } catch (Exception e) {
+            return Result.failure(ApplicationError.unexpected("update-area-description", e.getMessage()));
+        }
+    }
+
+    @Override
     public Result<Area, ApplicationError> handle(ActivateAreaCommand command) {
         var result = areaRepository.findById(command.areaId());
         if (result.isEmpty())
@@ -102,4 +119,4 @@ public class AreaCommandServiceImpl implements AreaCommandService {
             return Result.failure(ApplicationError.unexpected("deactivate-area", e.getMessage()));
         }
     }
-}
+}

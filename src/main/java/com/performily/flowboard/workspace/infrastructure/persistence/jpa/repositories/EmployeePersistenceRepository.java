@@ -114,4 +114,7 @@ public interface EmployeePersistenceRepository extends JpaRepository<EmployeePer
      */
     @Query("select count(employee) from EmployeePersistenceEntity employee where employee.directManager.id = :managerId and employee.status <> :status")
     long countByDirectManagerIdAndStatusNot(@Param("managerId") Long managerId, @Param("status") EmploymentStatus status);
-}
+
+    @Query("select count(assignment) from JobAssignmentPersistenceEntity assignment where assignment.position.id = :positionId")
+    long countJobAssignmentsByPositionId(@Param("positionId") Long positionId);
+}

@@ -5,11 +5,14 @@ import com.performily.flowboard.shared.interfaces.rest.transform.ErrorResponseAs
 import com.performily.flowboard.shared.interfaces.rest.transform.ResponseEntityAssembler;
 import com.performily.flowboard.workspace.application.commandservices.EmployeeCommandService;
 import com.performily.flowboard.workspace.application.queryservices.EmployeeQueryService;
+import com.performily.flowboard.workspace.domain.model.commands.RemoveEmployeeDocumentCommand;
 import com.performily.flowboard.workspace.domain.model.queries.GetEmployeeByIdQuery;
 import com.performily.flowboard.workspace.interfaces.rest.resources.AttachEmployeeDocumentResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.EmployeeDocumentResource;
+import com.performily.flowboard.workspace.interfaces.rest.resources.EmployeeResource;
 import com.performily.flowboard.workspace.interfaces.rest.transform.AttachEmployeeDocumentCommandFromResourceAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.EmployeeDocumentResourceFromEntityAssembler;
+import com.performily.flowboard.workspace.interfaces.rest.transform.EmployeeResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -98,5 +101,27 @@ public class EmployeeDocumentsController {
         var result = employeeCommandService.handle(command);
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 result, EmployeeDocumentResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.CREATED);
+    }
+
+    /**
+     * Remove employee document.
+     *
+     * @param employeeId the employee id
+     * @param documentId the document id
+     * @return the HTTP response
+     */
+    @DeleteMapping("/{documentId}")
+    @Operation(summary = "Remove employee document", description = "Removes a document from the employee record.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Document removed successfully",
+                    content = @Content(schema = @Schema(implementation = EmployeeResource.class))),
+            @ApiResponse(responseCode = "404", description = "Employee or document not found")
+    })
+    public ResponseEntity<?> removeDocument(
+            @PathVariable @Parameter(description = "Employee unique identifier", example = "1", required = true) Long employeeId,
+            @PathVariable @Parameter(description = "Document unique identifier", example = "1", required = true) Long documentId) {
+        var result = employeeCommandService.handle(new RemoveEmployeeDocumentCommand(employeeId, documentId));
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, EmployeeResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
     }
 }

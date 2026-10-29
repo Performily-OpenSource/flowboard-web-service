@@ -6,16 +6,21 @@ import com.performily.flowboard.shared.interfaces.rest.transform.ErrorResponseAs
 import com.performily.flowboard.shared.interfaces.rest.transform.ResponseEntityAssembler;
 import com.performily.flowboard.workspace.application.commandservices.PositionCommandService;
 import com.performily.flowboard.workspace.application.queryservices.PositionQueryService;
+import com.performily.flowboard.workspace.domain.model.commands.ActivatePositionCommand;
 import com.performily.flowboard.workspace.domain.model.commands.DeactivatePositionCommand;
 import com.performily.flowboard.workspace.domain.model.entities.Position;
 import com.performily.flowboard.workspace.domain.model.queries.GetAllPositionsByAreaIdQuery;
 import com.performily.flowboard.workspace.domain.model.queries.GetAllPositionsQuery;
 import com.performily.flowboard.workspace.domain.model.queries.GetPositionByIdQuery;
+import com.performily.flowboard.workspace.interfaces.rest.resources.ChangePositionAreaResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.CreatePositionResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.PositionResource;
+import com.performily.flowboard.workspace.interfaces.rest.resources.RenamePositionResource;
 import com.performily.flowboard.workspace.interfaces.rest.resources.UpdatePositionReferenceSalaryResource;
+import com.performily.flowboard.workspace.interfaces.rest.transform.ChangePositionAreaCommandFromResourceAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.CreatePositionCommandFromResourceAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.PositionResourceFromEntityAssembler;
+import com.performily.flowboard.workspace.interfaces.rest.transform.RenamePositionCommandFromResourceAssembler;
 import com.performily.flowboard.workspace.interfaces.rest.transform.UpdatePositionReferenceSalaryCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -152,6 +157,78 @@ public class PositionsController {
     }
 
     /**
+     * Rename position.
+     *
+     * @param positionId the position id
+     * @param resource the {@link RenamePositionResource} instance
+     * @return the HTTP response
+     */
+    @PatchMapping("/{positionId}/title")
+    @Operation(summary = "Rename position", description = "Renames a position. The title must be unique in its area.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Position renamed successfully",
+                    content = @Content(schema = @Schema(implementation = PositionResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Position not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - title already exists in the area")
+    })
+    public ResponseEntity<?> renamePosition(
+            @PathVariable @Parameter(description = "Position unique identifier", example = "1", required = true) Long positionId,
+            @Valid @RequestBody RenamePositionResource resource) {
+        var command = RenamePositionCommandFromResourceAssembler.toCommandFromResource(positionId, resource);
+        var result = positionCommandService.handle(command);
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, PositionResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
+     * Change position area.
+     *
+     * @param positionId the position id
+     * @param resource the {@link ChangePositionAreaResource} instance
+     * @return the HTTP response
+     */
+    @PatchMapping("/{positionId}/area")
+    @Operation(summary = "Change position area", description = "Moves a position to another active area. A position that employees hold or have held cannot be moved.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Position moved successfully",
+                    content = @Content(schema = @Schema(implementation = PositionResource.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid input data"),
+            @ApiResponse(responseCode = "404", description = "Position or area not found"),
+            @ApiResponse(responseCode = "409", description = "Conflict - title already exists in the new area"),
+            @ApiResponse(responseCode = "422", description = "The area is inactive or the position is in use")
+    })
+    public ResponseEntity<?> changePositionArea(
+            @PathVariable @Parameter(description = "Position unique identifier", example = "1", required = true) Long positionId,
+            @Valid @RequestBody ChangePositionAreaResource resource) {
+        var command = ChangePositionAreaCommandFromResourceAssembler.toCommandFromResource(positionId, resource);
+        var result = positionCommandService.handle(command);
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, PositionResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
+     * Activate position.
+     *
+     * @param positionId the position id
+     * @return the HTTP response
+     */
+    @PatchMapping("/{positionId}/activate")
+    @Operation(summary = "Activate position", description = "Activates an inactive position. Its area must be active.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Position activated successfully",
+                    content = @Content(schema = @Schema(implementation = PositionResource.class))),
+            @ApiResponse(responseCode = "404", description = "Position not found"),
+            @ApiResponse(responseCode = "422", description = "Position is already active or its area is inactive")
+    })
+    public ResponseEntity<?> activatePosition(
+            @PathVariable @Parameter(description = "Position unique identifier", example = "1", required = true) Long positionId) {
+        var result = positionCommandService.handle(new ActivatePositionCommand(positionId));
+        return ResponseEntityAssembler.toResponseEntityFromResult(
+                result, PositionResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
+    }
+
+    /**
      * Deactivate position.
      *
      * @param positionId the position id
@@ -171,4 +248,4 @@ public class PositionsController {
         return ResponseEntityAssembler.toResponseEntityFromResult(
                 result, PositionResourceFromEntityAssembler::toResourceFromEntity, HttpStatus.OK);
     }
-}
+}

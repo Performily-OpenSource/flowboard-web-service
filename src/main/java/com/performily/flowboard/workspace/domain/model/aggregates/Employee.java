@@ -259,6 +259,59 @@ public class Employee extends AbstractDomainAggregateRoot<Employee> {
     }
 
     /**
+     * Reactivates a suspended employee.
+     *
+     * @throws IllegalStateException if the employee is not suspended
+     */
+    public void reactivate() {
+        if (status != EmploymentStatus.SUSPENDED) {
+            throw new IllegalStateException("Only suspended employees can be reactivated");
+        }
+        this.status = EmploymentStatus.ACTIVE;
+    }
+
+    /**
+     * Updates the identity document of the employee.
+     *
+     * @param identityDocument the new {@link IdentityDocument}
+     * @throws NullPointerException if the identity document is null
+     */
+    public void updateIdentityDocument(IdentityDocument identityDocument) {
+        this.identityDocument = Objects.requireNonNull(identityDocument, "Identity document cannot be null");
+    }
+
+    /**
+     * Updates the contract type and the contract end date. The hire date does not change.
+     *
+     * @param contractType the new {@link ContractType}
+     * @param contractEndDate the new contract end date, or null when the contract is open-ended
+     * @throws IllegalStateException if the employee is terminated
+     * @throws IllegalArgumentException if a FIXED_TERM contract has no end date or the end date is before the hire date
+     */
+    public void updateContract(ContractType contractType, LocalDate contractEndDate) {
+        if (status == EmploymentStatus.TERMINATED) {
+            throw new IllegalStateException("The contract of a terminated employee cannot be changed");
+        }
+        Objects.requireNonNull(contractType, "Contract type cannot be null");
+        var period = new EmploymentPeriod(employmentPeriod.hireDate(), contractEndDate);
+        validateContract(contractType, period);
+        this.contractType = contractType;
+        this.employmentPeriod = period;
+    }
+
+    /**
+     * Removes a document from the employee record.
+     *
+     * @param documentId the document id
+     * @throws IllegalArgumentException if the employee has no document with that id
+     */
+    public void removeDocument(Long documentId) {
+        if (!documents.removeIf(document -> Objects.equals(document.getId(), documentId))) {
+            throw new IllegalArgumentException("The employee has no document with id %d".formatted(documentId));
+        }
+    }
+
+    /**
      * Attaches a document to the employee record.
      *
      * @param type the document type
@@ -402,4 +455,4 @@ public class Employee extends AbstractDomainAggregateRoot<Employee> {
     public List<EmployeeDocument> getDocuments() {
         return List.copyOf(documents);
     }
-}
+}
