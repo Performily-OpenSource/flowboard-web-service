@@ -1,4 +1,4 @@
-package com.performily.flowboard.iam.domain.model;
+package com.performily.flowboard.iam.domain.model.entities;
 
 import jakarta.persistence.*;
 import java.time.Instant;
@@ -14,7 +14,7 @@ public class RevokedToken {
     @Column(name = "expires_at", nullable = false)
     public Instant expiresAt;
 
-    protected RevokedToken() {}
+    public RevokedToken() {}
 
     public RevokedToken(String id, Instant expires) {
         this.tokenId = id;
