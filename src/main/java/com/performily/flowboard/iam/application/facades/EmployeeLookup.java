@@ -1,24 +1,26 @@
 package com.performily.flowboard.iam.application.facades;
 
-import org.springframework.jdbc.core.JdbcTemplate;
+import com.performily.flowboard.workspace.application.facades.WorkspaceContextFacade;
+import com.performily.flowboard.workspace.domain.model.aggregates.Employee;
 import org.springframework.stereotype.Component;
 
+/**
+ * Anti-corruption access from IAM to the Workspace bounded context.
+ * IAM only needs to know whether an employee can sign in, so it asks the Workspace
+ * facade instead of reading the employees table.
+ */
 @Component
 public class EmployeeLookup {
 
-    private final JdbcTemplate jdbc;
+    private final WorkspaceContextFacade workspace;
 
-    public EmployeeLookup(JdbcTemplate j) {
-        jdbc = j;
+    public EmployeeLookup(WorkspaceContextFacade workspace) {
+        this.workspace = workspace;
     }
 
     public boolean existsActive(Long id) {
-        return Boolean.TRUE.equals(
-            jdbc.queryForObject(
-                "SELECT COUNT(*) > 0 FROM employees WHERE id = ? AND status = 'ACTIVE'",
-                Boolean.class,
-                id
-            )
-        );
+        return workspace.findEmployeeById(id)
+                .map(Employee::isActive)
+                .orElse(false);
     }
 }
