@@ -5,6 +5,7 @@ import com.performily.flowboard.iam.application.internal.commandservices.IamServ
 import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.*;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,11 +35,13 @@ public class IamSecurityConfiguration {
     }
 
     @Bean
-    CorsConfigurationSource corsConfigurationSource() {
+    CorsConfigurationSource corsConfigurationSource(
+            @Value("${cors.allowed-origins}") String[] allowedOrigins
+    ) {
         CorsConfiguration config = new CorsConfiguration();
 
         config.setAllowedOrigins(
-                List.of("http://localhost:4200")
+                List.of(allowedOrigins)
         );
 
         config.setAllowedMethods(
